@@ -16,8 +16,31 @@ gitlab_rails['gitlab_default_theme'] = "{{ gitlab_default_theme }}"
 
 # Whether to redirect http to https.
 nginx['redirect_http_to_https'] = {{ gitlab_redirect_http_to_https }}
+
+# SSL and Lets Encrypt
+
+# Letsencrypt settings `gitlab_external_url` must also contain the full FQDN
+
+{% if gitlab_external_url and gitlab_letsencrypt_enabled and gitlab_letsencrypt_contact %}
+letsencrypt['enable'] = {{ gitlab_letsencrypt_enabled }}
+# gitlab_letsencrypt_contact format is '["info@edv-consult.de", "me@edv-consult.de"]'
+letsencrypt['contact_emails'] = {{ gitlab_letsencrypt_contact }}
+
+# If letsencrypt is enabled then do not use `ssl_certificate(_key)` variables
+{% else %}
+
 nginx['ssl_certificate'] = "{{ gitlab_ssl_certificate }}"
 nginx['ssl_certificate_key'] = "{{ gitlab_ssl_certificate_key }}"
+
+# 2-way SSL Client Authentication.
+{% if gitlab_nginx_ssl_verify_client %}
+nginx['ssl_verify_client'] = "{{ gitlab_nginx_ssl_verify_client }}"
+{% endif %}
+{% if gitlab_nginx_ssl_client_certificate %}
+nginx['ssl_client_certificate'] = "{{ gitlab_nginx_ssl_client_certificate }}"
+{% endif %}
+
+{% endif %}
 
 # The directory where Git repositories will be stored.
 git_data_dirs({"default" => {"path" => "{{ gitlab_git_data_dir }}"} })
@@ -61,20 +84,6 @@ gitlab_rails['smtp_tls'] = {{ gitlab_smtp_tls }}
 gitlab_rails['smtp_openssl_verify_mode'] = '{{ gitlab_smtp_openssl_verify_mode }}'
 gitlab_rails['smtp_ca_path'] = '{{ gitlab_smtp_ca_path }}'
 gitlab_rails['smtp_ca_file'] = '{{ gitlab_smtp_ca_file }}'
-
-# 2-way SSL Client Authentication.
-{% if gitlab_nginx_ssl_verify_client %}
-nginx['ssl_verify_client'] = "{{ gitlab_nginx_ssl_verify_client }}"
-{% endif %}
-{% if gitlab_nginx_ssl_client_certificate %}
-nginx['ssl_client_certificate'] = "{{ gitlab_nginx_ssl_client_certificate }}"
-{% endif %}
-
-# Letsencrypt settings `gitlab_external_url` must also contain the full FQDN
-{% if gitlab_external_url and gitlab_letsencrypt_enabled and gitlab_letsencrypt_contact %}
-letsencrypt['enable'] = "{{ gitlab_letsencrypt_enabled }}"   
-letsencrypt['contact_emails'] = "{{ gitlab_letsencrypt_contact }}"
-{% endif %}
 
 # To change other settings, see:
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/README.md#changing-gitlab-yml-settings
